@@ -38,6 +38,7 @@ class Uci
     options = default_options.merge(options)
     require_keys!(options, [:engine_path, :movetime])
     @movetime = options[:movetime]
+    @fen = nil
 
     set_debug(options)
     reset_board!
@@ -76,8 +77,12 @@ class Uci
   # best option available.
   def bestmove
     write_to_engine("go movetime #{@movetime}")
-    until (move_string = read_from_engine).to_s.size > 1
+    STDERR.puts "write_to_engine(\"go movetime #{@movetime}\")"
+    while true
+      until (move_string = read_from_engine).to_s.size > 1
       sleep(0.25)
+      end
+      break if move_string =~ /^bestmove/
     end
     if move_string =~ /^bestmove/
       if move_string =~ /^bestmove\sa1a1/ # fruit and rybka
@@ -265,6 +270,7 @@ class Uci
     unless fen =~ fen_pattern
       raise FenFormatError, "Fenstring not correct: #{fen}. Expected to match #{fen_pattern}"
     end
+    # new_game!
     reset_board!
     fen.split(' ').first.split('/').reverse.each_with_index do |rank, rank_index|
       file_index = 0
@@ -277,7 +283,6 @@ class Uci
         end
       end
     end
-    new_game!
     @fen = fen
     send_position_to_engine
   end
