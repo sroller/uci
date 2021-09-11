@@ -11,7 +11,7 @@ describe Uci do
 
   subject do
     Uci.new(
-      :engine_path => '/usr/bin/stockfish',
+      :engine_path => '/usr/bin/stockfish.exe',
       :debug => true
     )
   end
@@ -29,31 +29,31 @@ describe Uci do
     end
     it "should set debug mode" do
       uci = Uci.new(valid_options)
-      uci.debug.should be_false
+      uci.debug.should be false
 
       uci = Uci.new(valid_options.merge( :debug => true ))
-      uci.debug.should be_true
+      uci.debug.should be true
     end
   end
 
   describe "#ready?" do
     before(:each) do
-      subject.stub!(:write_to_engine).with('isready')
+      subject.stub(:write_to_engine).with('isready')
     end
 
     context "engine is ready" do
       it "should be true" do
-        subject.stub!(:read_from_engine).and_return('readyok')
+        subject.stub(:read_from_engine).and_return('readyok')
 
-        subject.ready?.should be_true
+        subject.ready?.should be true
       end
     end
 
     context "engine is not ready" do
       it "should be false" do
-        subject.stub!(:read_from_engine).and_return('no')
+        subject.stub(:read_from_engine).and_return('no')
 
-        subject.ready?.should be_false
+        subject.ready?.should be false
       end
     end
   end
@@ -62,13 +62,13 @@ describe Uci do
     context "game is new" do
       it "should be true" do
         subject.stub(:moves).and_return([])
-        subject.new_game?.should be_true
+        subject.new_game?.should be true
       end
     end
     context "game is not new" do
       it "should be false" do
         subject.stub(:moves).and_return(%w[ a2a3 ])
-        subject.new_game?.should be_false
+        subject.new_game?.should be false
       end
     end
   end
@@ -118,7 +118,7 @@ describe Uci do
   describe "#set_board" do
     it "should set the board layout from a passed LONG fenstring" do
       # given
-      subject.stub!( :send_position_to_engine )
+      subject.stub( :send_position_to_engine )
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
       # expect
       subject.fenstring.should == "r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR"
@@ -138,7 +138,7 @@ describe Uci do
       subject.get_piece("a3").should == [:knight, :black]
     end
     it "should raise an error if the board was set from a fen string" do
-      subject.stub!(:send_position_to_engine)
+      subject.stub(:send_position_to_engine)
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
       lambda { subject.place_piece(:black, :knight, "a3") }.should raise_exception BoardLockedError
     end
@@ -151,10 +151,10 @@ describe Uci do
       # given
       subject.clear_position("a1")
       # expect
-      subject.piece_at?("a1").should be_false
+      subject.piece_at?("a1").should be false
     end
     it "should raise an error if the board was set from a fen string" do
-      subject.stub!(:send_position_to_engine)
+      subject.stub(:send_position_to_engine)
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
       lambda { subject.clear_position("a1") }.should raise_exception BoardLockedError
     end
@@ -179,11 +179,11 @@ describe Uci do
   describe "#piece_at?" do
     it "should be true if there is a piece at the position indicated" do
       # assume startpos
-      subject.piece_at?("a1").should be_true
+      subject.piece_at?("a1").should be true
     end
     it "should be false if there is not a piece at the position indicated" do
       # assume startpos
-      subject.piece_at?("a3").should be_false
+      subject.piece_at?("a3").should be false
     end
   end
 
@@ -212,11 +212,11 @@ describe Uci do
   describe "#move_piece" do
     before(:each) do
       # sanity
-      subject.piece_at?("a2").should be_true
-      subject.piece_at?("a3").should be_false
+      subject.piece_at?("a2").should be true
+      subject.piece_at?("a3").should be false
     end
     it "should raise an error if the board was set from a fen string" do
-      subject.stub!(:send_position_to_engine)
+      subject.stub(:send_position_to_engine)
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
       lambda { subject.move_piece("a2a3") }.should raise_exception BoardLockedError
     end
@@ -224,14 +224,14 @@ describe Uci do
       piece = subject.get_piece("a2")
       subject.move_piece("a2a3")
       piece.should == subject.get_piece("a3")
-      subject.piece_at?("a2").should be_false
+      subject.piece_at?("a2").should be false
     end
     it 'it should overwrite pieces if one is moved atop another' do
       # note this is an illegal move
       piece = subject.get_piece("a1")
       subject.move_piece("a1a2")
       piece.should == subject.get_piece("a2")
-      subject.piece_at?("a1").should be_false
+      subject.piece_at?("a1").should be false
     end
     it "should raise an exception if the source position has no piece" do
       lambda { subject.move_piece("a3a4") }.should raise_exception NoPieceAtPositionError
@@ -284,50 +284,50 @@ describe Uci do
   end
 
   describe "#new_game!" do
-    it "should tell the engine a new game is set" do
+    xit "should tell the engine a new game is set" do
       pending
     end
-    it "should reset the internal board" do
+    xit "should reset the internal board" do
       pending
     end
-    it "should set the pieces in a startpos" do
+    xit "should set the pieces in a startpos" do
       pending
     end
   end
 
   describe "#bestmove" do
-    it "should write the bestmove command to the engine" do
+    xit "should write the bestmove command to the engine" do
       pending
     end
-    it "should detect various forfeit notations" do
+    xit "should detect various forfeit notations" do
       pending
     end
-    it "should raise and exception if the bestmove notation is not understood" do
+    xit "should raise and exception if the bestmove notation is not understood" do
       pending
     end
-    it "shpould raise and exception if the returned command was not prefixed with 'bestmove'" do
+    xit "shpould raise and exception if the returned command was not prefixed with 'bestmove'" do
       pending
     end
   end
 
   describe "#send_position_to_engine" do
     context "board was set from fen" do
-      it "should send a 'position fen' command" do
+      xit "should send a 'position fen' command" do
         pending
       end
     end
     context "the board is set from startpos" do
-      it "should set a 'position startpo' command followed by the move log" do
+      xit "should set a 'position startpo' command followed by the move log" do
         pending
       end
     end
   end
 
   describe "#go!" do
-    it "should send the currentn position to the engine" do
+    xit "should send the current position to the engine" do
       pending
     end
-    it "should update the current board with the result of 'bestmove'" do
+    xit "should update the current board with the result of 'bestmove'" do
       pending
     end
   end
