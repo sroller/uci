@@ -3,16 +3,16 @@ require 'uci'
 
 describe Uci do
   before(:each) do
-    Uci.any_instance.stub(:check_engine)
-    Uci.any_instance.stub(:open_engine_connection)
-    Uci.any_instance.stub(:get_engine_name)
-    Uci.any_instance.stub(:new_game!)
+    allow_any_instance_of(Uci).to receive(:check_engine)
+    allow_any_instance_of(Uci).to receive(:open_engine_connection)
+    allow_any_instance_of(Uci).to receive(:get_engine_name)
+    allow_any_instance_of(Uci).to receive(:new_game!)
   end
 
   subject do
     Uci.new(
       :engine_path => '/usr/bin/stockfish.exe',
-      :debug => true
+      # :debug => true
     )
   end
 
@@ -21,39 +21,39 @@ describe Uci do
       { :engine_path => 'xxx' }
     end
     it "should be an instance of Uci" do
-      subject.should be_a_kind_of Uci
+      expect(subject).to be_a_kind_of Uci
     end
     it "should require :engine_path' in the options hash" do
-      lambda { Uci.new({}) }.should raise_exception
-      lambda { Uci.new(valid_options) }.should_not raise_exception
+      expect { Uci.new({}) }.to raise_error(MissingRequiredHashKeyError)
+      expect { Uci.new(valid_options) }.to_not raise_exception
     end
     it "should set debug mode" do
       uci = Uci.new(valid_options)
-      uci.debug.should be false
+      expect(uci.debug).to be false
 
       uci = Uci.new(valid_options.merge( :debug => true ))
-      uci.debug.should be true
+      expect(uci.debug).to be true
     end
   end
 
   describe "#ready?" do
     before(:each) do
-      subject.stub(:write_to_engine).with('isready')
+      expect(subject).to receive(:write_to_engine)
     end
 
     context "engine is ready" do
       it "should be true" do
-        subject.stub(:read_from_engine).and_return('readyok')
+        expect(subject).to receive(:read_from_engine).and_return('readyok')
 
-        subject.ready?.should be true
+        expect(subject.ready?).to be true
       end
     end
 
     context "engine is not ready" do
       it "should be false" do
-        subject.stub(:read_from_engine).and_return('no')
+        expect(subject).to receive(:read_from_engine).and_return('no')
 
-        subject.ready?.should be false
+        expect(subject.ready?).to be false
       end
     end
   end
@@ -61,14 +61,14 @@ describe Uci do
   describe "new_game?" do
     context "game is new" do
       it "should be true" do
-        subject.stub(:moves).and_return([])
-        subject.new_game?.should be true
+        expect(subject).to receive(:moves).and_return([])
+        expect(subject.new_game?).to be true
       end
     end
     context "game is not new" do
       it "should be false" do
-        subject.stub(:moves).and_return(%w[ a2a3 ])
-        subject.new_game?.should be false
+        expect(subject).to receive(:moves).and_return(%w[ a2a3 ])
+        expect(subject.new_game?).to be false
       end
     end
   end
@@ -76,7 +76,7 @@ describe Uci do
   describe "#board" do
     it "should return an ascii-art version of the current board" do
       # starting position
-      subject.board.should == "  ABCDEFGH
+      expect(subject.board).to eq "  ABCDEFGH
 8 rnbqkbnr
 7 pppppppp
 6 ........
@@ -90,7 +90,7 @@ describe Uci do
       # moves
       subject.move_piece('b2b4')
       subject.move_piece('b8a6')
-      subject.board.should == "  ABCDEFGH
+      expect(subject.board).to eq "  ABCDEFGH
 8 r.bqkbnr
 7 pppppppp
 6 n.......
@@ -106,72 +106,72 @@ describe Uci do
   describe "#fenstring" do
     it "should return a short fenstring of the current board" do
       # starting position
-      subject.fenstring.should == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
+      expect(subject.fenstring).to eq "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR"
 
       # moves
       subject.move_piece('b2b4')
       subject.move_piece('b8a6')
-      subject.fenstring.should == "r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR"
+      expect(subject.fenstring).to eq "r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR"
     end
   end
 
   describe "#set_board" do
     it "should set the board layout from a passed LONG fenstring" do
       # given
-      subject.stub( :send_position_to_engine )
+      expect(subject).to receive( :send_position_to_engine )
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
       # expect
-      subject.fenstring.should == "r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR"
+      expect(subject.fenstring).to eq "r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR"
     end
     it "should raise an error is the passed fen format is incorret" do
       # try to use a short fen where we neeed a long fen
-      lambda { subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR") }.should raise_exception FenFormatError
+      expect { subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR") }.to raise_exception FenFormatError
     end
   end
 
   describe "#place_piece" do
     it "should place a piece on the board" do
       subject.place_piece(:white, :queen, "a3")
-      subject.get_piece("a3").should == [:queen, :white]
+      expect(subject.get_piece("a3")).to eq [:queen, :white]
 
       subject.place_piece(:black, :knight, "a3")
-      subject.get_piece("a3").should == [:knight, :black]
+      expect(subject.get_piece("a3")).to eq [:knight, :black]
     end
     it "should raise an error if the board was set from a fen string" do
-      subject.stub(:send_position_to_engine)
+      expect(subject).to receive(:send_position_to_engine)
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
-      lambda { subject.place_piece(:black, :knight, "a3") }.should raise_exception BoardLockedError
+      expect { subject.place_piece(:black, :knight, "a3") }.to raise_exception BoardLockedError
     end
   end
 
   describe "#clear_position" do
     it "should clear a position on the board" do
       # sanity
-      subject.get_piece("a1").should == [:rook, :white]
+      expect(subject.get_piece("a1")).to eq [:rook, :white]
       # given
       subject.clear_position("a1")
       # expect
-      subject.piece_at?("a1").should be false
+      expect(subject.piece_at?("a1")).to be false
     end
     it "should raise an error if the board was set from a fen string" do
-      subject.stub(:send_position_to_engine)
+      expect(subject).to receive(:send_position_to_engine)
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
-      lambda { subject.clear_position("a1") }.should raise_exception BoardLockedError
+      expect { subject.clear_position("a1") }.to raise_exception BoardLockedError
     end
   end
 
   describe "#piece_name" do
     context "symbol name passed" do
       it "should return the single letter symbol" do
-        subject.piece_name(:queen).should == "q"
-        subject.piece_name(:knight).should == "n"
+        expect(subject.piece_name(:queen)).to eq "q"
+        expect(subject.piece_name(:knight)).to eq "n"
       end
     end
     context "single letter symbol passes" do
-      it "should return the symbiol name" do
-        subject.piece_name('n').should == :knight
-        subject.piece_name('k').should == :king
-        subject.piece_name('q').should == :queen
+      it "should return the symbol name" do
+        expect(subject.piece_name('n')).to eq :knight
+        expect(subject.piece_name('k')).to eq :king
+        expect(subject.piece_name('q')).to eq :queen
       end
     end
   end
@@ -179,107 +179,108 @@ describe Uci do
   describe "#piece_at?" do
     it "should be true if there is a piece at the position indicated" do
       # assume startpos
-      subject.piece_at?("a1").should be true
+      expect(subject.piece_at?("a1")).to be true
     end
     it "should be false if there is not a piece at the position indicated" do
       # assume startpos
-      subject.piece_at?("a3").should be false
+      expect(subject.piece_at?("a3")).to be false
     end
   end
 
   describe "#get_piece" do
     it "should return the information for a piece at a given position" do
       # assume startpos
-      subject.get_piece('a1').should == [:rook, :white]
-      subject.get_piece('h8').should == [:rook, :black]
+      expect(subject.get_piece('a1')).to eq [:rook, :white]
+      expect(subject.get_piece('h8')).to eq [:rook, :black]
     end
     it "should raise an exception if there is no piece at the given position" do
-      lambda { subject.get_piece('a3') }.should raise_exception NoPieceAtPositionError
+      expect { subject.get_piece('a3') }.to raise_exception NoPieceAtPositionError
     end
   end
 
   describe "#moves" do
     it "should return the interal move list" do
       # startpos
-      subject.moves.should == []
+      expect(subject.moves).to eq []
 
       # add some moves
-      subject.move_piece('a2a3'); subject.move_piece('a7a5')
-      subject.moves.should == ['a2a3', 'a7a5']
+      subject.move_piece('a2a3')
+      subject.move_piece('a7a5')
+      expect(subject.moves).to eq ['a2a3', 'a7a5']
     end
   end
 
   describe "#move_piece" do
     before(:each) do
       # sanity
-      subject.piece_at?("a2").should be true
-      subject.piece_at?("a3").should be false
+      expect(subject.piece_at?("a2")).to be true
+      expect(subject.piece_at?("a3")).to be false
     end
     it "should raise an error if the board was set from a fen string" do
-      subject.stub(:send_position_to_engine)
+      expect(subject).to receive(:send_position_to_engine)
       subject.set_board("r1bqkbnr/pppppppp/n7/8/1P6/8/P1PPPPPP/RNBQKBNR b KQkq - 0 1")
-      lambda { subject.move_piece("a2a3") }.should raise_exception BoardLockedError
+      expect { subject.move_piece("a2a3") }.to raise_exception BoardLockedError
     end
     it "should move pieces from one position to another" do
       piece = subject.get_piece("a2")
       subject.move_piece("a2a3")
-      piece.should == subject.get_piece("a3")
-      subject.piece_at?("a2").should be false
+      expect(piece).to eq subject.get_piece("a3")
+      expect(subject.piece_at?("a2")).to be false
     end
     it 'it should overwrite pieces if one is moved atop another' do
       # note this is an illegal move
       piece = subject.get_piece("a1")
       subject.move_piece("a1a2")
-      piece.should == subject.get_piece("a2")
-      subject.piece_at?("a1").should be false
+      expect(piece).to eq subject.get_piece("a2")
+      expect(subject.piece_at?("a1")).to be false
     end
     it "should raise an exception if the source position has no piece" do
-      lambda { subject.move_piece("a3a4") }.should raise_exception NoPieceAtPositionError
+      expect { subject.move_piece("a3a4") }.to raise_exception NoPieceAtPositionError
     end
     it "should promote a pawn to a queen at the correct rank with the correct notation" do
       subject.move_piece("a2a8q")
-      subject.get_piece("a8").should == [:queen, :white]
+      expect(subject.get_piece("a8")).to eq [:queen, :white]
     end
     it "should promote a pawn to a rook at the correct rank with the correct notation" do
       subject.move_piece("a2a8r")
-      subject.get_piece("a8").should == [:rook, :white]
+      expect(subject.get_piece("a8")).to eq [:rook, :white]
     end
     it "should promote a pawn to a knight at the correct rank with the correct notation" do
       subject.move_piece("a2a8n")
-      subject.get_piece("a8").should == [:knight, :white]
+      expect(subject.get_piece("a8")).to eq [:knight, :white]
     end
     it "should promote a pawn to a bishop at the correct rank with the correct notation" do
       subject.move_piece("a2a8b")
-      subject.get_piece("a8").should == [:bishop, :white]
+      expect(subject.get_piece("a8")).to eq [:bishop, :white]
     end
     it "should raise an exception if promotion to unallowed piece" do
-      lambda { subject.move_piece("a2a8k") }.should raise_exception UnknownNotationExtensionError
+      expect { subject.move_piece("a2a8k") }.to raise_exception UnknownNotationExtensionError
     end
     it "should properly understand castling, white king's rook" do
       subject.move_piece("e1g1")
-      subject.get_piece("f1").should == [:rook, :white]
-      subject.get_piece("g1").should == [:king, :white]
+      expect(subject.get_piece("f1")).to eq [:rook, :white]
+      expect(subject.get_piece("g1")).to eq [:king, :white]
     end
     it "should properly understand castling, white queens's rook" do
       subject.move_piece("e1c1")
-      subject.get_piece("d1").should == [:rook, :white]
-      subject.get_piece("c1").should == [:king, :white]
+      expect(subject.get_piece("d1")).to eq [:rook, :white]
+      expect(subject.get_piece("c1")).to eq [:king, :white]
     end
     it "should properly understand castling, black king's rook" do
       subject.move_piece("e8g8")
-      subject.get_piece("f8").should == [:rook, :black]
-      subject.get_piece("g8").should == [:king, :black]
+      expect(subject.get_piece("f8")).to eq [:rook, :black]
+      expect(subject.get_piece("g8")).to eq [:king, :black]
     end
     it "should properly understand castling, black queens's rook" do
       subject.move_piece("e8c8")
-      subject.get_piece("d8").should == [:rook, :black]
-      subject.get_piece("c8").should == [:king, :black]
+      expect(subject.get_piece("d8")).to eq [:rook, :black]
+      expect(subject.get_piece("c8")).to eq [:king, :black]
     end
 
     it "should append the move to the move log" do
-      subject.moves.should be_empty
+      expect(subject.moves).to be_empty
       subject.move_piece("a2a3")
-      subject.moves.should == ["a2a3"]
+      expect(subject.moves).to eq ["a2a3"]
     end
   end
 
@@ -305,7 +306,7 @@ describe Uci do
     xit "should raise and exception if the bestmove notation is not understood" do
       pending
     end
-    xit "shpould raise and exception if the returned command was not prefixed with 'bestmove'" do
+    xit "should raise and exception if the returned command was not prefixed with 'bestmove'" do
       pending
     end
   end
@@ -332,3 +333,4 @@ describe Uci do
     end
   end
 end
+

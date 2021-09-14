@@ -18,8 +18,7 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  gem.has_rdoc = true
-  gem.add_development_dependency('simplecov', '0.7.1')
-  gem.add_development_dependency('rspec', '2.12.0')
-  gem.add_development_dependency 'rake', '10.0.4'
+  gem.add_development_dependency('simplecov')
+  gem.add_development_dependency('rspec')
+  gem.add_development_dependency 'rake'
 end

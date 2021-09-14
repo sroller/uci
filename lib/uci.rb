@@ -176,9 +176,9 @@ class Uci
   end
 
   # return the current movement log
-  def moves
-    @moves
-  end
+  # def moves
+  #   @moves
+  # end
 
   # get the details of a piece at the current position
   # raises NoPieceAtPositionError if position is unoccupied
@@ -270,7 +270,6 @@ class Uci
     unless fen =~ fen_pattern
       raise FenFormatError, "Fenstring not correct: #{fen}. Expected to match #{fen_pattern}"
     end
-    # new_game!
     reset_board!
     fen.split(' ').first.split('/').reverse.each_with_index do |rank, rank_index|
       file_index = 0
