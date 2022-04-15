@@ -77,13 +77,13 @@ class Uci
   # best option available.
   def bestmove
     write_to_engine("go movetime #{@movetime}")
-    STDERR.puts "write_to_engine(\"go movetime #{@movetime}\")"
-    while true
+    # while true
       until (move_string = read_from_engine).to_s.size > 1
-      sleep(0.25)
+        sleep(0.25)
       end
-      break if move_string =~ /^bestmove/
-    end
+      # break if move_string =~ /^bestmove/
+    # end
+      STDERR.puts move_string
     if move_string =~ /^bestmove/
       if move_string =~ /^bestmove\sa1a1/ # fruit and rybka
         raise EngineResignError, "Engine Resigns. Check Mate? #{move_string}"
@@ -121,7 +121,7 @@ class Uci
     move_piece(bestmove)
   end
 
-  # move a piece on the current interal board.
+  # move a piece on the current internal board.
   #
   # ==== Attributes
   # * move_string = algebraic standard notation of the chess move. Shorthand not allowed.
@@ -370,6 +370,11 @@ protected
     end
   end
 
+  ## TODO: check logic
+  ## we should just read in this method
+  ## and decide what to do with the output
+  ## at the calling place
+
   def read_from_engine(strip_cr=true)
     log("\tread_from_engine") #XXX
     response = ""
@@ -467,7 +472,7 @@ private
   end
 
   def default_options
-    { :movetime => 100 }
+    { :movetime => 1000 }
   end
 end
 
@@ -484,3 +489,4 @@ class NoPieceAtPositionError < UciError; end
 class UnknownBestmoveSyntax < UciError; end
 class FenFormatError < UciError; end
 class BoardLockedError < UciError; end
+
