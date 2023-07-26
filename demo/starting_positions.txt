@@ -958,3 +958,4 @@ rbkrnnbq/pppppppp/8/8/8/8/PPPPPPPP/RBKRNNBQ w - - 0 1
 rkrbnnbq/pppppppp/8/8/8/8/PPPPPPPP/RKRBNNBQ w - - 0 1
 rkrnnbbq/pppppppp/8/8/8/8/PPPPPPPP/RKRNNBBQ w - - 0 1
 rkrnnqbb/pppppppp/8/8/8/8/PPPPPPPP/RKRNNQBB w - - 0 1
+
