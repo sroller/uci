@@ -16,7 +16,7 @@ def sec2human(seconds)
   hours = seconds / 3600
   minutes = (seconds - (hours*3600)) / 60
   secs = seconds % 60
-  sprintf "%02d:%02d:%02d", hours, minutes, secs
+  sprintf "%0d:%02d:%02d", hours, minutes, secs
 end
 
 def send_string(channel, msg)
@@ -32,11 +32,12 @@ def uci_find_best_move(fen, set_depth, set_move_time)
 
   warn "start #{ENGINE_PATH}"
 
-  sin, sout, thread = Open3.popen2e(ENGINE_PATH)
+  uci_inp, uci_out, thread = Open3.popen2e(ENGINE_PATH)
 
   input_thread = nil
   output_thread = nil
   bestmove = ""
+  time = ""
   score = 0
   time = "0"
   depth = 0
@@ -101,7 +102,7 @@ def uci_find_best_move(fen, set_depth, set_move_time)
     send_string(sin, "go depth #{set_depth} movetime #{set_move_time}")
     while true do
       command = gets.chomp
-      send_string(sin, command)
+      send_string(uci_inp, command)
       if command == "quit"
         # set_global_stop true
         Thread.kill output_thread
@@ -113,8 +114,8 @@ def uci_find_best_move(fen, set_depth, set_move_time)
 
   input_thread.join
   output_thread.join
-  sin.close
-  sout.close
+  uci_inp.close
+  uci_out.close
   warn "UCI out"
   return bestmove, score, time, depth
 end
