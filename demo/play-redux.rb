@@ -5,8 +5,9 @@ require 'awesome_print'
 
 if Gem::Platform.local.to_s =~ /linux/
   ENGINE_PATH = '/usr/games/stockfish'
-elsif Gem::Platform.local.to_s =~ /mingw32/
-  ENGINE_PATH = 'c:/util/stockfish_14_x64_avx2.exe'
+elsif Gem::Platform.local.to_s =~ /mingw/
+  ENGINE_PATH = 'c:/util/stockfish-17.0-windows-x86-64-avx2.exe'
+  # ENGINE_PATH = 'e:/schach/lc0/lc0.exe -w e:/schach/lc0/weights/384x30-T60-611246.pb.gz'
 end
 
 # seconds to 00:00:00
@@ -19,14 +20,14 @@ def sec2human(seconds)
 end
 
 def send_string(channel, msg)
-  puts "< #{msg}"
+  warn "< #{msg}"
   channel.puts(msg)
-  sleep(0.25)
+  # sleep(0.25) # is this necessary?
 end
 
 move = ""
 
-def uci_find_best_move(fen, depth)
+def uci_find_best_move(fen, set_depth, set_move_time)
   # fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" if fen.nil?
 
   warn "start #{ENGINE_PATH}"
@@ -37,20 +38,47 @@ def uci_find_best_move(fen, depth)
   output_thread = nil
   bestmove = ""
   score = 0
+  time = "0"
+  depth = 0
+  options = Hash.new
 
   output_thread = Thread.new do
     warn "start output thread"
     line = ""
-    while true do
-      
-      line = sout.gets.chomp
-      # ap line
+    # while true do
+    while line = sout.gets.chomp do
+      # warn "> #{line}"
+      next if line =~ /currmove/
+
       case
-      when val = line.match(/depth (\d+) .*score cp (\d+) .*time (\d+).*pv (.*)$/)
-        score = val[2].to_f / 100
-        printf "%.1f depth: %d %s (%s)\n", val[2].to_f/100, val[1].to_i, val[4], sec2human(val[3])
+      
+      when line[0,2] == 'id'
+        if /id name (?<v>.+)$/ =~ line
+          version = v
+        end
+
+      when line[0,6] == 'option'
+        if /option name (?<opt>.+) type (?<typ>\w+) default (?<dflt>\w+)/ =~ line
+          options[opt] = { type: typ, default: dflt }
+        end
+
+      when line[0,4] == 'info'
+
+        if /depth (?<d>\d+)/ =~ line
+          depth = d.to_i
+        end
+        if /score cp (?<s>\d+)/ =~ line
+          score = s.to_f / 100
+        end
+        if /time (?<t>\d+)/ =~ line
+          time = sec2human(t)
+        end
+        if / pv (?<p>.+)$/ =~ line
+          pv = p
+        end
+        printf "%.2f %d %s (%s)\n", score, depth, pv, time
       else
-        puts "> #{line}" unless line =~ /currmove/
+        puts line
       end
       break if line[0,8] == "bestmove"
     end
@@ -66,11 +94,11 @@ def uci_find_best_move(fen, depth)
     send_string(sin, "isready")
     send_string(sin, "ucinewgame")
     send_string(sin, "setoption name UCI_Chess960 value true")
-    send_string(sin, "setoption name Threads value 6")
-    send_string(sin, "setoption name Hash value 4096")
-    send_string(sin, "setoption name MultPV value 2")
+    send_string(sin, "setoption name Threads value 32")
+    send_string(sin, "setoption name Hash value 57000")
+    # send_string(sin, "setoption name MultPV value 1")
     send_string(sin, "position fen #{fen}")
-    send_string(sin, "go depth #{depth}")
+    send_string(sin, "go depth #{set_depth} movetime #{set_move_time}")
     while true do
       command = gets.chomp
       send_string(sin, command)
@@ -88,17 +116,19 @@ def uci_find_best_move(fen, depth)
   sin.close
   sout.close
   warn "UCI out"
-  return bestmove, score
+  return bestmove, score, time, depth
 end
 
 # main
 
-depth = 30
+depth = 40
+time = 60000 # in milliseconds
+
 File.open("starting_positions.txt", "r") do |f|
-  File.write("best_move.csv", "#fen,bestmove,score,depth #{Time.now} #{ENGINE_PATH}\n", mode: "a")
+  File.write("best_move.csv", "#started at #{Time.now.utc}, #{ENGINE_PATH}\n#fen,bestmove,score,depth,time\n", mode: "a")
   while fen = f.readline.chomp do
-    move, score = uci_find_best_move(fen, depth)
-    File.write("best_move.csv", "#{fen},#{move},#{"%.2f" % score},#{depth}\n", mode: "a")
+    move, score, last_time, last_depth = uci_find_best_move(fen, depth, time)
+    File.write("best_move.csv", "#{fen},#{move},#{"%.2f" % score},#{last_depth},#{last_time}\n", mode: "a")
   end
 end
 warn "done"
