@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+require 'awesome_print'
+
 module Chess960
 # create Chess960 starting position
 # algorithm from https://en.wikipedia.org/wiki/Fischer_random_chess_numbering_scheme
@@ -95,11 +97,11 @@ end
 
 end
 
-# N1 = 1 # rand(960)
+if __FILE__ == $0
 # N1 = 518 # standard chess
-puts Chess960.starting_position
-puts Chess960.starting_position(959)
-puts Chess960.starting_position(518)
-puts Chess960.starting_position(0)
-puts Chess960.starting_position -1
-
+ap Chess960.starting_position
+ap Chess960.starting_position(959)
+ap Chess960.starting_position(518)
+ap Chess960.starting_position(0)
+ap Chess960.starting_position -1
+end

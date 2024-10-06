@@ -6,8 +6,12 @@ require 'awesome_print'
 if Gem::Platform.local.to_s =~ /linux/
   ENGINE_PATH = '/usr/games/stockfish'
 elsif Gem::Platform.local.to_s =~ /mingw/
+  # ENGINE_PATH = 'c:/util/stockfish-16-avx2.exe'
+  # ENGINE_PATH = 'c:/util/stockfish-16.1-windows-x86-64-avx2.exe'
   ENGINE_PATH = 'c:/util/stockfish-17.0-windows-x86-64-avx2.exe'
-  # ENGINE_PATH = 'e:/schach/lc0/lc0.exe -w e:/schach/lc0/weights/384x30-T60-611246.pb.gz'
+  # ENGINE_PATH = 'c:\users\steffenr\downloads\lc0\lc0-v0.31.1-windows-onnx-dml\lc0.exe -w c:\users\steffenr\downloads\lc0\networks\BT4-1740.pb.gz'
+  # ENGINE_PATH = 'c:\users\steffenr\downloads\lc0\lc0-v0.31.1-windows-onnx-dml\lc0.exe -w c:\users\steffenr\downloads\lc0\networks\768x15x24h-t82-swa-7464000.pb.gz'
+  # ENGINE_PATH = 'c:/users/steffenr/downloads/lc0/lc0-v0.31.1-windows-onnx-dml/lc0.exe'
 end
 
 # seconds to 00:00:00
@@ -32,7 +36,12 @@ def uci_find_best_move(fen, set_depth, set_move_time)
 
   warn "start #{ENGINE_PATH}"
 
-  uci_inp, uci_out, thread = Open3.popen2e(ENGINE_PATH)
+  begin
+    sin, sout, thread = Open3.popen2e(ENGINE_PATH)
+  rescue => e
+    STDERR.puts e
+    exit
+  end
 
   input_thread = nil
   output_thread = nil
@@ -42,6 +51,7 @@ def uci_find_best_move(fen, set_depth, set_move_time)
   time = "0"
   depth = 0
   options = Hash.new
+  start_time = Time.now
 
   output_thread = Thread.new do
     warn "start output thread"
@@ -89,6 +99,7 @@ def uci_find_best_move(fen, set_depth, set_move_time)
     output_thread.exit
   end
 
+
   input_thread = Thread.new do
     warn "start input thread"
     send_string(sin, "uci")
@@ -99,7 +110,9 @@ def uci_find_best_move(fen, set_depth, set_move_time)
     send_string(sin, "setoption name Hash value 57000")
     # send_string(sin, "setoption name MultPV value 1")
     send_string(sin, "position fen #{fen}")
-    send_string(sin, "go depth #{set_depth} movetime #{set_move_time}")
+    # send_string(sin, "go depth #{set_depth} movetime #{set_move_time}")
+    send_string(sin, "go depth #{set_depth}")
+    # send_string(sin, "go movetime #{set_move_time}")
     while true do
       command = gets.chomp
       send_string(uci_inp, command)
@@ -114,15 +127,15 @@ def uci_find_best_move(fen, set_depth, set_move_time)
 
   input_thread.join
   output_thread.join
-  uci_inp.close
-  uci_out.close
+  sin.close
+  sout.close
   warn "UCI out"
   return bestmove, score, time, depth
 end
 
 # main
 
-depth = 40
+depth = 50
 time = 60000 # in milliseconds
 
 File.open("starting_positions.txt", "r") do |f|
